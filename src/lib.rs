@@ -2,8 +2,29 @@ use ndarray::prelude::*;
 
 
 
+/// documentation goes here
+/// # some title
+/// foo bar blah blah blah.
+pub fn in_polygon(polygon: &Array2<f64>, points: &Array2<f64>, include_edges: bool) {
+    // extract some ref for readability later on
+    let xs = points.slice(s![.., 0]);
+    let ys = points.slice(s![.., 1]);
+    let n = polygon.len();
+    let counters: Array<i32, Ix1> = Array::zeros(xs.len());
 
-pub fn in_polygon(polygon: &Array2<f64>, points: &Array2<f64>) {
+    // can we do better than this for loop. I just want an array with integers 
+    // from 0 to xs.len()...
+    let mut indices: Array<usize, Ix1> = Array::zeros(xs.len());
+    for i in (0..indices.len()) {
+        indices[i] = i;
+    }
+
+    // a little trick to handle points on horizontal edges
+    let mut count_on_horz = 1;
+    if include_edges {count_on_horz = 2;}
+
+
+
 
 }
 
