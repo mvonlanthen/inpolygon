@@ -21,13 +21,23 @@ pub fn main() {
 
     let a = Array::<f64, _>::zeros((3, 2));
 
-    let polygon  = array![
-        [-1., -1.],
-        [ 1., -1.],
-        [ 1.,  1.],
-        [ 1., -1.],
-        [-1., -1.]
-    ];
+    let  a = array![1., 2., 6., 4., 5.];
+    let mut counters = Array::<u32, _>::zeros(a.len());
+    let bidx = a.map(|x| *x >= 5.0);
+    println!("bidx: {}", bidx);
+
+    for (i,b) in bidx.iter().enumerate() {
+        if *b==true { counters[i] += 1};
+    }
+    println!("counters: {}", counters);
+
+    // let polygon  = array![
+    //     [-1., -1.],
+    //     [ 1., -1.],
+    //     [ 1.,  1.],
+    //     [ 1., -1.],
+    //     [-1., -1.]
+    // ];
 
     let points = array![
         [0., 0.],

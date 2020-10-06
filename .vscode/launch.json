@@ -7,6 +7,24 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "Debug executable 'inpolygon'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=inpolygon",
+                    "--package=inpolygon"
+                ],
+                "filter": {
+                    "name": "inpolygon",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "Debug unit tests in library 'inpolygon'",
             "cargo": {
                 "args": [

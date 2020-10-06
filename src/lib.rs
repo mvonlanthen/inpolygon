@@ -12,7 +12,7 @@ pub fn in_polygon(polygon: &Array2<f64>, points: &Array2<f64>, include_edges: bo
     let n = polygon.len();
     let counters: Array<i32, Ix1> = Array::zeros(xs.len());
 
-    // can we do better than this for loop. I just want an array with integers 
+    // can we do better than this for loop. I just want an array with integers
     // from 0 to xs.len()...
     let mut indices: Array<usize, Ix1> = Array::zeros(xs.len());
     for i in (0..indices.len()) {
@@ -37,7 +37,6 @@ pub fn sum(a: f32, b: f32) -> f32 {
 // Some useful links:
 // * ndarray quick tutorial
 //  https://github.com/rust-ndarray/ndarray/blob/master/README-quick-start.md
-
 
 
 
