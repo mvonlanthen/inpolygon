@@ -16,3 +16,4 @@ path = "src/bin.rs"
 
 [dependencies]
 ndarray = "0.13"
+ndarray-rand = "0.11.0"

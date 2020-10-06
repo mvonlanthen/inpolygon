@@ -1,30 +1,55 @@
 use ndarray::prelude::*;
 
 
+pub fn pt_in_polygon(x: &f64, y:&f64, polygon: &Array2<f64>, include_edges: bool) -> bool {
+    let nb_poly_pts = polygon.len_of(Axis(0));
+    let mut counter  = 0;
+    let mut  x_intersect = 0.0;
 
-/// documentation goes here
-/// # some title
-/// foo bar blah blah blah.
-pub fn in_polygon(polygon: &Array2<f64>, points: &Array2<f64>, include_edges: bool) {
-    // extract some ref for readability later on
-    let xs = points.slice(s![.., 0]);
-    let ys = points.slice(s![.., 1]);
-    let n = polygon.len();
-    let counters: Array<i32, Ix1> = Array::zeros(xs.len());
+    // a little trick to handle a point on horizontal edges
+    let count_on_horz = if include_edges==true {2} else {1};
 
-    // can we do better than this for loop. I just want an array with integers
-    // from 0 to xs.len()...
-    let mut indices: Array<usize, Ix1> = Array::zeros(xs.len());
-    for i in (0..indices.len()) {
-        indices[i] = i;
+    // loop through each edges defined by (p1, p2). but first, initialize some 
+    // variables
+    let mut p1x = &polygon[[0,0]];
+    let mut p1y = &polygon[[0,1]];
+    let mut p2x: &f64;
+    let mut p2y: &f64;
+    for i in 1..nb_poly_pts {
+        p2x = &polygon[[i%nb_poly_pts,0]];
+        p2y = &polygon[[i%nb_poly_pts,1]];
+        if p1y==p2y {
+            // test if the point is on horizontal edge
+            if (*y==*p1y) & ((*x>p1x.min(*p2x)) & (*x<p1x.min(*p2x))){
+                counter += count_on_horz;
+            }
+        } else { // p1y!= p2y
+            // check if the right ray from the point intersect with the current edge
+            if (*y>=p1y.min(*p2y)) & (*y<=p1y.max(*p2y)) {
+                x_intersect = (y-p1y) * (p2x-p1x)/(p2y-p1y) + p1x;
+            }
+
+            // check if the point is right on the edge
+            if (*x==x_intersect) & (include_edges==true) {
+                counter += 1;
+            // check if the point is on the left of the current edge
+            } else if *x<x_intersect {
+                counter += 1;
+            }
+        }
+
+        // go the next edge
+        p1x = p2x;
+        p1y = p2y;
     }
 
-    // a little trick to handle points on horizontal edges
-    let mut count_on_horz = 1;
-    if include_edges {count_on_horz = 2;}
-
-
-
+    // if counter is odd, then the point is inside the polygon, otherwise the 
+    // point is outside
+    if (counter%2)!=0 {
+        return true;
+    } else {
+        return false;
+    }
 
 }
 
@@ -55,3 +80,5 @@ mod tests {
         assert_eq!(sum(1.0, 4.0), 5.0)
     }
 }
+
+
