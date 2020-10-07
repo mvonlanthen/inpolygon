@@ -1,7 +1,27 @@
 use ndarray::prelude::*;
 
 
-pub fn pt_in_polygon(x: &f64, y:&f64, polygon: &Array2<f64>, include_edges: bool) -> bool {
+// pub fn pts_in_polygon() -> bool {
+//     let mut x: f64;
+//     // let mut x: f64 = 0.;
+//     let mut y: f64;
+//     let mut is_inside: bool;
+//     for point in points.axis_iter(Axis(0)) {
+//         x = point[0];
+//         y = point[1];
+//         is_inside = pt_in_polygon(&x, &y, &polygon, true);
+//         println!("[{:.02}, {:.02}] is inside: {}", x, y, is_inside);
+//     }
+// }
+
+
+
+pub fn pt_in_polygon(
+    x: &f64, 
+    y:&f64, 
+    polygon: &Array2<f64>, 
+    include_edges: bool) -> bool 
+{
     let nb_poly_pts = polygon.len_of(Axis(0));
     let mut counter  = 0;
     let mut  x_intersect = 0.0;
@@ -28,7 +48,6 @@ pub fn pt_in_polygon(x: &f64, y:&f64, polygon: &Array2<f64>, include_edges: bool
             if (*y>=p1y.min(*p2y)) & (*y<=p1y.max(*p2y)) {
                 x_intersect = (y-p1y) * (p2x-p1x)/(p2y-p1y) + p1x;
             }
-
             // check if the point is right on the edge
             if (*x==x_intersect) & (include_edges==true) {
                 counter += 1;
