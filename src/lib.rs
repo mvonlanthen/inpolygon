@@ -1,27 +1,48 @@
+//! A create with functions to compute if a list of points aere inside of a polygon.
+//! This is my first crate to learn rust and crates
+
 use ndarray::prelude::*;
 
-
-// pub fn pts_in_polygon() -> bool {
-//     let mut x: f64;
-//     // let mut x: f64 = 0.;
-//     let mut y: f64;
-//     let mut is_inside: bool;
-//     for point in points.axis_iter(Axis(0)) {
-//         x = point[0];
-//         y = point[1];
-//         is_inside = pt_in_polygon(&x, &y, &polygon, true);
-//         println!("[{:.02}, {:.02}] is inside: {}", x, y, is_inside);
-//     }
-// }
+// Some useful links:
+// * ndarray quick tutorial
+//  https://github.com/rust-ndarray/ndarray/blob/master/README-quick-start.md
 
 
+/// Compute if a list of points are inside and/or on the edges of a polygon. 
+/// It works only with 2D points and polygon. The polygon must be close, i.e. the 
+/// last point must be the same than the first point. To maximize execution speed, 
+/// no argument checks are performed (e.g. are the points really 2D?).
+/// 
+/// # Examples
+/// 
+/// ```
+/// use ndarray::prelude::*;
+/// let polygon = array![[-1.,-1.], [1.,-1.], [1.,1.], [-1.,1.],[-1.,-1.]];
+/// let points = array![[0., 0.], [2., 0.], [1., 0.], [0., -1.]];
+/// let is_inside = pts_in_polygon(&points.view(), &polygon.view(), true);
+/// assert!(is_inside == array![true, false, true, true]);
+/// ```
+pub fn pts_in_polygon(
+    points: &ArrayView2<f64>,
+    polygon: &ArrayView2<f64>, 
+    include_edges: bool
+) -> Array1<bool> {
+    let mut is_inside = Array::from_elem(points.len_of(Axis(0)), false);
+    for (i,point) in points.axis_iter(Axis(0)).enumerate() {
+        is_inside[i] = pt_in_polygon(&point.view(), &polygon.view(), include_edges);
+    }
+    return is_inside;
+}
 
-pub fn pt_in_polygon(
-    x: &f64, 
-    y:&f64, 
-    polygon: &Array2<f64>, 
-    include_edges: bool) -> bool 
-{
+/// Compute if a point is inside and/or on the edges of a polygon. Works only with 
+/// 2D point and polygon
+pub fn pt_in_polygon( 
+    point: &ArrayView1<f64>,
+    polygon: &ArrayView2<f64>, 
+    include_edges: bool
+) -> bool {
+    let x = &point[0];
+    let y = &point[1];
     let nb_poly_pts = polygon.len_of(Axis(0));
     let mut counter  = 0;
     let mut  x_intersect = 0.0;
@@ -73,17 +94,8 @@ pub fn pt_in_polygon(
 }
 
 
-pub fn sum(a: f32, b: f32) -> f32 {
-    return a+b;
-}
-
-
-// Some useful links:
-// * ndarray quick tutorial
-//  https://github.com/rust-ndarray/ndarray/blob/master/README-quick-start.md
-
-
-
+// tests
+// -----
 
 #[cfg(test)]
 mod tests {
@@ -95,9 +107,19 @@ mod tests {
     }
 
     #[test]
-    fn test_sum() {
-        assert_eq!(sum(1.0, 4.0), 5.0)
-    }
+    fn test_pts_in_polygon() {
+        // a cube of side 2, aligned with the coordinate system and centred on [0,0].
+        let polygon = array![
+            [-1.,-1.], [1.,-1.], [1.,1.], [-1.,1.],[-1.,-1.]
+        ];
+        let points = array![
+            [0., 0.], [2., 0.], [1., 0.], [0., -1.] 
+        ];
+
+        let is_inside = pts_in_polygon(&points.view(), &polygon.view(), true);
+        assert!(is_inside == array![true, false, true, true]);
+    } 
+
 }
 
 

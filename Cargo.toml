@@ -1,6 +1,6 @@
 [package]
 name = "inpolygon"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["mvonlanthen"]
 edition = "2018"
 
@@ -10,9 +10,10 @@ edition = "2018"
 name = "inpolygon"
 path = "src/lib.rs"
 
-[[bin]]
-name = "inpolygon"
-path = "src/bin.rs"
+# to also compile the bin
+# [[bin]]
+# name = "inpolygon"
+# path = "src/bin.rs"
 
 [dependencies]
 ndarray = "0.13"
