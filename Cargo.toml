@@ -1,6 +1,6 @@
 [package]
 name = "inpolygon"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["mvonlanthen"]
 edition = "2018"
 
@@ -10,7 +10,7 @@ edition = "2018"
 name = "inpolygon"
 path = "src/lib.rs"
 
-# to also compile the bin
+# to also compile the bin (sandbox)
 # [[bin]]
 # name = "inpolygon"
 # path = "src/bin.rs"
