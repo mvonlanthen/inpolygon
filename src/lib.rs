@@ -1,28 +1,70 @@
-//! A create with functions to compute if a list of points aere inside of a polygon.
-//! This is my first crate to learn rust and crates
+//! A create with functions to compute if a list of points are inside a polygon.
+//! This is my first crate. The goal is mostly to learn rust.
 
 use ndarray::prelude::*;
-
-// Some useful links:
-// * ndarray quick tutorial
-//  https://github.com/rust-ndarray/ndarray/blob/master/README-quick-start.md
-
+use ndarray::parallel::prelude::*;
 
 /// Compute if a list of points are inside and/or on the edges of a polygon. 
 /// It works only with 2D points and polygon. The polygon must be close, i.e. the 
-/// last point must be the same than the first point. To maximize execution speed, 
-/// no argument checks are performed (e.g. are the points really 2D?).
+/// last point must be the same than the first point. No test is done to check if 
+/// the polygon is really closed!
+/// 
+/// # Examples
+/// ```
+/// use ndarray::prelude::*;
+/// use inpolygon::pts_in_polygon;
+/// let polygon = array![
+///     [1.,-1.], [1.,1.], [-0.5,1.], [-1.,0.], [-1.,-1.], [1.,-1.]
+/// ];
+/// let points = array![
+///    [0., 0.], [0.,2.], [2.,0.], [1.,0.], [0.,1.], [-2.,0.], [-0.75,1.], 
+///    [-1.,1.], [0.,-1.], [-1.,0.], [-1.,-1.], [1.,-1.], [-1.,-0.5]
+/// ];
+/// let is_inside = pts_in_polygon(&points.view(), &polygon.view(), true, true);
+/// let is_inside_truth = array![
+///    true, false, false, true, true, false, false, false, true, true,  true,  true, true
+/// ];
+/// assert!(is_inside == is_inside_truth);
+/// ```
+/// 
+/// # Panics
+///
+/// If the second dimension of arguments `points` and/or `polygon` is not equal 
+/// to 2 (i.e. 2D points and polygon), the function panics.
 pub fn pts_in_polygon(
     points: &ArrayView2<f64>,
     polygon: &ArrayView2<f64>, 
-    include_edges: bool
+    include_edges: bool,
+    parallel: bool
 ) -> Array1<bool> {
-    points.map_axis(Axis(1), |pt| pt_in_polygon(&pt, &polygon, include_edges))
+    if points.len_of(Axis(1))!=2 {
+        panic!(
+            "The dimension of the second axis of `points` must be equal to 2 (i.e 2D points), not {}.", 
+            points.len_of(Axis(1))
+        );
+    }
+    if polygon.len_of(Axis(1))!=2 {
+        panic!(
+            "The dimension of the second axis of `polygon` must be equal to 2 (i.e 2D points), not {}.", 
+            polygon.len_of(Axis(1))
+        );
+    }
+    if parallel==true {
+        ArrayBase::from_vec(
+            points.axis_iter(Axis(0))
+                  .into_par_iter()
+                  .map(|pt| pt_in_polygon(&pt, &polygon, include_edges))
+                  .collect()
+        )
+    } else {
+        points.map_axis(Axis(1), |pt| pt_in_polygon(&pt, &polygon, include_edges))
+    }
 }
 
-/// Compute if a point is inside and/or on the edges of a polygon. Works only with 
-/// 2D point and polygon
-pub fn pt_in_polygon( 
+/// Compute if a point is inside and/or on the edges of a polygon. Works only in 
+/// 2D. No argument shape/dim check in this function. These checks are done in the 
+/// public functions
+fn pt_in_polygon( 
     point: &ArrayView1<f64>,
     polygon: &ArrayView2<f64>, 
     include_edges: bool
@@ -31,11 +73,8 @@ pub fn pt_in_polygon(
     let x = &point[0];
     let y = &point[1];
     let nb_poly_pts = polygon.len_of(Axis(0));
-    let mut counter  = 0;
+    let mut is_inside  = false;
     let mut  x_intersect: f64;
-
-    // a little trick to handle a point on horizontal edges
-    let count_on_horz = if include_edges==true {2} else {1};
 
     // loop through each edges defined by (p1, p2). but first, initialize some 
     // variables
@@ -47,76 +86,59 @@ pub fn pt_in_polygon(
         p2x = &polygon[[i+1,0]];
         p2y = &polygon[[i+1,1]];
         if p1y==p2y {
-            // test if the point is on horizontal edge
-            if (*y==*p1y) & ((*x>=p1x.min(*p2x)) & (*x<p1x.min(*p2x))){
-                counter += count_on_horz;
+            // horizontal edge. Check if the point is on the edge and process 
+            // according `include_edges`
+            if (*y==*p1y) & ((*x>=p1x.min(*p2x)) & (*x<p1x.max(*p2x))){
+                if include_edges==true {return true;} else {return false;}
             }
-        } else { // p1y!= p2y
+        } else {
             // check if the right ray from the point intersect with the current edge
-            if (*y>=p1y.min(*p2y)) & (*y<=p1y.max(*p2y)) {
+            if (*y>=p1y.min(*p2y)) & (*y<p1y.max(*p2y)) {
                 x_intersect = (y-p1y) * (p2x-p1x)/(p2y-p1y) + p1x;
-                // check if the point is exactly on the edge
-                if (*x==x_intersect) & (include_edges==true){
-                    counter += 1;
-                // check if the point is on the left of the current edge
+                if *x==x_intersect {
+                    // check if the point is exactly on the edge and process 
+                    //according `include_edges`
+                    if include_edges==true {return true;} else {return false;}
                 } else if *x<x_intersect {
-                    counter += 1;
+                    // check if the point is on the left of the current edge
+                    is_inside = !is_inside;
                 }
             } 
         }
-
-        // go the next edge
+        // go to the next edge
         p1x = p2x;
         p1y = p2y;
     }
-
-    // if counter is odd, then the point is inside the polygon, otherwise the 
-    // point is outside
-    if (counter%2)!=0 {
-        return true;
-    } else {
-        return false;
-    }
-
+    return is_inside;
 }
 
 
 // tests
 // -----
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-
-    #[test]
     fn test_pts_in_polygon() {
-        // a cube of side 2, aligned with the coordinate system and centred on [0,0].
         let polygon = array![
-            [-1.0,-1.0],
-            [1.0,-1.0],
-            [1.0,1.0],
-            [-0.5,1.0],
-            [-1.0,0.0],
-            [-1.0,-1.0]
+            [1.,-1.], [1.,1.], [-0.5,1.], [-1.,0.], [-1.,-1.], [1.,-1.],
         ];
         let points = array![
-            [0., 0.],
-            [0.,2.],
-            [2.,0.],
-            [1.,0.],
-            [0.,1.],
-            [-2.,0.],
-            [-0.75,1.],
-            [-1.,1.]
+            [0., 0.], [0.,2.], [2.,0.], [1.,0.], [0.,1.], [-2.,0.], [-0.75,1.], 
+            [-1.,1.], [0.,-1.], [-1.,0.], [-1.,-1.], [1.,-1.], [-1.,-0.5]
         ];
-
-        let is_inside = pts_in_polygon(&points.view(), &polygon.view(), true);
-        assert!(is_inside == array![true, false, false, true, true, true, false, false]);
+        let is_inside = pts_in_polygon(
+            &points.view(), 
+            &polygon.view(), 
+            true,
+            true
+        );
+        let is_inside_truth = array![
+            true, false, false,  true,  true, false, false, 
+            false,  true, true,  true,  true,  true
+        ];
+        assert!(is_inside == is_inside_truth);
     } 
 
 }

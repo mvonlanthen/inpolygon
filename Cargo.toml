@@ -10,11 +10,15 @@ edition = "2018"
 name = "inpolygon"
 path = "src/lib.rs"
 
-# to also compile the bin (sandbox)
+# to also compile the bin, which is just a sandbox and benchmark place.
 # [[bin]]
 # name = "inpolygon"
 # path = "src/bin.rs"
 
 [dependencies]
-ndarray = "0.13"
+# ndarray = "0.13"
 ndarray-rand = "0.11.0"
+
+[dependencies.ndarray]
+version = "0.13"
+features = ["rayon"]
